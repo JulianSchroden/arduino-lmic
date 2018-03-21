@@ -278,7 +278,7 @@ void  LMIC_selectSubBand (u1_t band);
 void  LMIC_setDrTxpow   (dr_t dr, s1_t txpow);  // set default/start DR/txpow
 void  LMIC_setAdrMode   (bit_t enabled);        // set ADR mode (if mobile turn off)
 #if !defined(DISABLE_JOIN)
-bit_t LMIC_startJoining (void);
+bit_t LMIC_startJoining (s1_t dataRate, s1_t txPower); // <!EDITED>
 #endif
 
 void  LMIC_shutdown     (void);

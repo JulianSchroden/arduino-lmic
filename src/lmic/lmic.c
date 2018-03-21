@@ -690,10 +690,14 @@ static void setBcnRxParams (void) {
 #define setRx1Params() /*LMIC.freq/rps remain unchanged*/
 
 #if !defined(DISABLE_JOIN)
-static void initJoinLoop (void) {
+static void initJoinLoop (u1_t dataRate, u1_t txPower) { // <!EDITED>
+    if(dataRate == -1)
+        dataRate = DR_SF7;
+    if(txPower == -1)
+        txPower = 14;
     LMIC.txChnl = os_getRndU1() % 3;
-    LMIC.adrTxPow = 14;
-    setDrJoin(DRCHG_SET, DR_SF7);
+    LMIC.adrTxPow = txPower;
+    setDrJoin(DRCHG_SET, dataRate);
     initDefaultChannels(1);
     ASSERT((LMIC.opmode & OP_NEXTCHNL)==0);
     LMIC.txend = LMIC.bands[BAND_MILLI].avail + rndDelay(8);
@@ -886,13 +890,17 @@ static void setBcnRxParams (void) {
 }
 
 #if !defined(DISABLE_JOIN)
-static void initJoinLoop (void) {
+static void initJoinLoop (s1_t dataRate, s1_t txPower) { // <!EDITED>
+    if(dataRate == -1)
+        dataRate = DR_SF7;
+    if(s1_t txPower == -1)
+        txPower = 20;
     LMIC.chRnd = 0;
     LMIC.txChnl = 0;
-    LMIC.adrTxPow = 20;
+    LMIC.adrTxPow = txPower;
     ASSERT((LMIC.opmode & OP_NEXTCHNL)==0);
     LMIC.txend = os_getTime();
-    setDrJoin(DRCHG_SET, DR_SF7);
+    setDrJoin(DRCHG_SET, dataRate);
 }
 
 static ostime_t nextJoinState (void) {
@@ -953,7 +961,7 @@ static void runReset (xref2osjob_t osjob) {
     // Disable session
     LMIC_reset();
 #if !defined(DISABLE_JOIN)
-    LMIC_startJoining();
+    LMIC_startJoining(-1, -1); // <!EDITED> -1 -> use defaults
 #endif // !DISABLE_JOIN
     reportEvent(EV_RESET);
 }
@@ -1843,7 +1851,7 @@ static void startJoining (xref2osjob_t osjob) {
 }
 
 // Start join procedure if not already joined.
-bit_t LMIC_startJoining (void) {
+bit_t LMIC_startJoining (s1_t dataRate, s1_t txPower) { // <!EDITED>
     if( LMIC.devaddr == 0 ) {
         // There should be no TX/RX going on
         ASSERT((LMIC.opmode & (OP_POLL|OP_TXRXPEND)) == 0);
@@ -1853,7 +1861,7 @@ bit_t LMIC_startJoining (void) {
         LMIC.opmode &= ~(OP_SCAN|OP_REJOIN|OP_LINKDEAD|OP_NEXTCHNL);
         // Setup state
         LMIC.rejoinCnt = LMIC.txCnt = 0;
-        initJoinLoop();
+        initJoinLoop(dataRate, txPower);
         LMIC.opmode |= OP_JOINING;
         // reportEvent will call engineUpdate which then starts sending JOIN REQUESTS
         os_setCallback(&LMIC.osjob, FUNC_ADDR(startJoining));
@@ -2041,7 +2049,7 @@ static void engineUpdate (void) {
 
 #if !defined(DISABLE_JOIN)
     if( LMIC.devaddr == 0 && (LMIC.opmode & OP_JOINING) == 0 ) {
-        LMIC_startJoining();
+        LMIC_startJoining(-1, -1); // <!EDITED> -1 -> use defaults
         return;
     }
 #endif // !DISABLE_JOIN
